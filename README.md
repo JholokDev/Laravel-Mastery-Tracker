@@ -1,4 +1,4 @@
-# Laravel Mastery Tracker �
+# Laravel Mastery Tracker 
 
 **Learn. Build. Track. Grow.**
 
@@ -8,20 +8,20 @@ Organize your learning roadmap, build real-world projects, maintain daily coding
 
 ## ✨ Features
 
-- � **Learning Roadmap** — Track PHP, Laravel, databases, APIs, security, testing, DevOps, and software architecture.
-- � **Daily Routine** — Plan study sessions, manage tasks, and record learning time.
-- � **Progress Dashboard** — Monitor completion percentages, study hours, streaks, and achievements.
-- �️ **Project Tracker** — Manage projects, tasks, GitHub repositories, live demos, and documentation.
-- � **Analytics** — Visualize learning progress and study activity.
-- � **Skills Assessment** — Evaluate your skills and track areas for improvement.
-- � **Learning Notes** — Save notes, code snippets, and useful resources.
-- � **Weekly Reviews** — Review achievements and plan upcoming learning goals.
-- � **Automatic Local Storage** — Keep your progress saved in your browser.
-- � **Backup & Restore** — Export and restore your learning data.
-- � **Responsive Design** — Learn and track progress across desktop, tablet, and mobile screens.
-- � **No Account Required** — Start using the application without registration.
+-  **Learning Roadmap** — Track PHP, Laravel, databases, APIs, security, testing, DevOps, and software architecture.
+-  **Daily Routine** — Plan study sessions, manage tasks, and record learning time.
+-  **Progress Dashboard** — Monitor completion percentages, study hours, streaks, and achievements.
+-  **Project Tracker** — Manage projects, tasks, GitHub repositories, live demos, and documentation.
+-  **Analytics** — Visualize learning progress and study activity.
+-  **Skills Assessment** — Evaluate your skills and track areas for improvement.
+-  **Learning Notes** — Save notes, code snippets, and useful resources.
+-  **Weekly Reviews** — Review achievements and plan upcoming learning goals.
+-  **Automatic Local Storage** — Keep your progress saved in your browser.
+-  **Backup & Restore** — Export and restore your learning data.
+-  **Responsive Design** — Learn and track progress across desktop, tablet, and mobile screens.
+-  **No Account Required** — Start using the application without registration.
 
-## � Who Is It For?
+##  Who Is It For?
 
 This project is suitable for:
 
@@ -32,7 +32,7 @@ This project is suitable for:
 - Developers working on SaaS applications and production-ready systems.
 - Self-taught programmers who want a structured learning plan.
 
-## � Getting Started
+##  Getting Started
 
 1. Open the live website.
 2. Explore the learning roadmap.
@@ -44,7 +44,7 @@ This project is suitable for:
 
 No account or backend database is required for the core experience.
 
-## � Data & Privacy
+##  Data & Privacy
 
 The application uses browser `localStorage` to save your learning progress and preferences.
 
@@ -56,7 +56,7 @@ The application uses browser `localStorage` to save your learning progress and p
 
 Third-party resources may require an internet connection.
 
-## �️ Learning Roadmap
+##  Learning Roadmap
 
 The roadmap covers key areas of professional software development:
 
@@ -77,7 +77,7 @@ The roadmap covers key areas of professional software development:
 
 Customize your learning journey according to your goals and experience.
 
-## � Contributing
+##  Contributing
 
 Contributions, bug reports, feature requests, and suggestions are welcome.
 
@@ -88,7 +88,7 @@ Contributions, bug reports, feature requests, and suggestions are welcome.
 
 Please ensure that changes preserve existing user data and maintain a reliable user experience.
 
-## �️ Future Improvements
+##  Future Improvements
 
 Potential future enhancements include:
 
@@ -100,7 +100,7 @@ Potential future enhancements include:
 
 These are potential improvements, not guaranteed features.
 
-## � License
+##  License
 
 This project is intended for open-source distribution. Refer to the repository's `LICENSE` file for the applicable permissions and restrictions.
 
