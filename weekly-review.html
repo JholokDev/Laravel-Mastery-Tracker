@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly Review — Laravel Mastery Tracker</title>
+<script>try{var s=JSON.parse(localStorage.getItem('lmt_data_v1')||'{}');document.documentElement.setAttribute('data-bs-theme',(s.settings&&s.settings.theme)||'dark')}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body data-page="weekly" data-title="Weekly Review" data-subtitle="A report generated from your actual stored activity">
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="main-wrap">
+  <header class="topbar" id="topbar"></header>
+  <main id="main" class="content" tabindex="-1">
+    <div class="card-lmt card-pad mb-3 d-flex flex-wrap align-items-center gap-2">
+      <button class="btn btn-outline-lmt btn-sm" id="prevW" aria-label="Previous week"><i class="bi bi-chevron-left"></i></button>
+      <label class="visually-hidden" for="weekPick">Pick a date in the week</label>
+      <input type="date" class="form-control form-control-sm w-auto" id="weekPick">
+      <button class="btn btn-outline-lmt btn-sm" id="nextW" aria-label="Next week"><i class="bi bi-chevron-right"></i></button>
+      <button class="btn btn-outline-lmt btn-sm" id="thisW">This week</button>
+      <button class="btn btn-outline-lmt btn-sm" id="lastW">Previous week</button>
+      <div class="ms-auto fw-bold" id="weekLabel"></div>
+    </div>
+    <div class="info-box small mb-3"><i class="bi bi-shield-check text-primary-lmt"></i> All numbers below are calculated from saved daily records, roadmap completion dates and project activity. Nothing is estimated or invented.</div>
+
+    <div class="row g-3 mb-3" id="weekKpis"></div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-xl-7"><div class="card-lmt h-100"><div class="card-head"><h2>Daily breakdown</h2></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th scope="col">Day</th><th scope="col">Record</th><th scope="col">Tasks</th><th scope="col">Minutes</th><th scope="col">Check-in</th><th scope="col">Topics</th></tr></thead><tbody id="dayRows"></tbody></table></div></div></div>
+      <div class="col-xl-5"><div class="card-lmt h-100"><div class="card-head"><h2>Study minutes this week</h2></div><div class="card-pad"><div class="chart-box sm"><canvas id="weekChart" role="img" aria-label="Study minutes per day this week"></canvas></div></div></div></div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6"><div class="card-lmt h-100"><div class="card-head"><h2><i class="bi bi-check2-circle me-2 text-success"></i>Topics completed</h2></div><div id="topicList"></div></div></div>
+      <div class="col-lg-6"><div class="card-lmt h-100"><div class="card-head"><h2><i class="bi bi-kanban me-2 text-accent"></i>Projects progressed</h2></div><div id="projectList"></div></div></div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-xl-8">
+        <form class="card-lmt" id="reviewForm" novalidate>
+          <div class="card-head"><h2><i class="bi bi-journal-richtext me-2 text-primary-lmt"></i>Weekly reflection</h2><span class="small text-muted-lmt" id="reviewSaved"></span></div>
+          <div class="card-pad"><div class="row g-3">
+            <div class="col-md-4"><label class="form-label" for="wTarget">Weekly study target (hours)</label><input type="number" class="form-control" id="wTarget" min="0" max="168" step="0.5" required><div class="invalid-feedback">0–168 hours.</div></div>
+            <div class="col-12"><label class="form-label" for="wAch">Achievements</label><textarea class="form-control" id="wAch" rows="3"></textarea></div>
+            <div class="col-md-6"><label class="form-label" for="wDiff">Difficulties</label><textarea class="form-control" id="wDiff" rows="3"></textarea></div>
+            <div class="col-md-6"><label class="form-label" for="wLessons">Lessons learned</label><textarea class="form-control" id="wLessons" rows="3"></textarea></div>
+            <div class="col-12"><label class="form-label" for="wNext">Next week's priorities</label><textarea class="form-control" id="wNext" rows="3"></textarea></div>
+          </div></div>
+          <div class="card-pad pt-0 d-flex flex-wrap gap-2"><button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Save reflection</button><button class="btn btn-outline-lmt" type="button" id="importDaily"><i class="bi bi-download"></i> Insert notes from daily records</button><button class="btn btn-ghost danger ms-auto" type="button" id="deleteReview"><i class="bi bi-trash"></i> Delete reflection</button></div>
+        </form>
+      </div>
+      <div class="col-xl-4"><div class="card-lmt h-100"><div class="card-head"><h2>Saved reviews</h2></div><div id="reviewList"></div></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+(() => {
+  const L = LMT, $ = id => document.getElementById(id), esc = L.esc;
+  const wq = L.param('week');
+  let start = L.weekStart(wq && L.parse(wq) ? wq : L.today());
+
+  function kpi(icon, label, value, hint, cls = '') {
+    return `<div class="col-6 col-md-4 col-xl-3"><div class="kpi-card"><div class="d-flex justify-content-between"><div><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div><div class="kpi-hint">${hint}</div></div><div class="kpi-icon ${cls}"><i class="bi ${icon}"></i></div></div></div></div>`;
+  }
+  function render() {
+    const w = L.weekStats(start), t = L.today(), st = L.streaks(), rv = L.state.weeklyReviews[start];
+    $('weekPick').value = start;
+    $('weekLabel').textContent = `${L.fmt(w.start, { day: 'numeric', month: 'short' })} – ${L.fmt(w.end, { day: 'numeric', month: 'short', year: 'numeric' })}${start === L.weekStart(t) ? ' (this week)' : ''}`;
+    $('weekKpis').innerHTML =
+      kpi('bi-bullseye', 'Weekly target', `${w.targetHours}h`, rv && rv.targetHours !== undefined ? 'Set for this week' : 'From settings') +
+      kpi('bi-clock-history', 'Actual study hours', L.r1(w.hours), `${Math.round(w.hoursPct)}% of target`, 'accent') +
+      kpi('bi-check2-circle', 'Completed topics', w.topicsCompleted.length, 'By completion date', 'green') +
+      kpi('bi-list-check', 'Routine tasks done', `${w.tasksDone}<small class="fs-6 text-muted-lmt">/${w.tasksTotal}</small>`, 'Across daily records') +
+      kpi('bi-kanban', 'Projects progressed', w.projects.length, 'With logged activity', 'accent') +
+      kpi('bi-percent', 'Weekly completion', `${Math.round(w.taskPct)}%`, 'Tasks done ÷ tasks planned') +
+      kpi('bi-star', 'Best learning day', w.best ? L.fmt(w.best.date, { weekday: 'short', day: 'numeric' }) : '—', w.best ? `${w.best.minutes} minutes` : 'No minutes recorded') +
+      kpi('bi-calendar-x', 'Missed study days', w.missed.length, 'Past days without check-in', 'muted') +
+      kpi('bi-fire', 'Current streak', st.current, `Longest ${st.longest} days`, 'accent');
+    $('dayRows').innerHTML = w.daily.map(d => `<tr class="${d.date === t ? 'table-active' : ''}"><td><a href="daily-routine.html?date=${d.date}">${L.fmt(d.date, { weekday: 'short', day: 'numeric', month: 'short' })}</a></td>
+      <td>${d.exists ? '<span class="badge-lmt st-ip">Recorded</span>' : d.date <= t ? '<span class="badge-lmt badge-overdue">Missing</span>' : '<span class="badge-lmt st-ns">Upcoming</span>'}</td>
+      <td>${d.exists ? `${d.done}/${d.total} <span class="text-muted-lmt small">(${Math.round(d.pct)}%)</span>` : '—'}</td><td>${d.exists ? d.actual : '—'}</td>
+      <td>${d.rec && d.rec.checkedIn ? '<i class="bi bi-check-circle-fill text-success" aria-label="Checked in"></i>' : '<i class="bi bi-dash-circle text-muted-lmt" aria-label="Not checked in"></i>'}</td>
+      <td class="small">${L.dayTopics(d.rec).map(id => esc(id)).join(', ') || '—'}</td></tr>`).join('');
+    $('topicList').innerHTML = w.topicsCompleted.length ? w.topicsCompleted.map(x => `<a class="list-row text-decoration-none" style="color:inherit" href="roadmap.html?topic=${encodeURIComponent(x.id)}"><i class="bi bi-check-circle-fill text-success"></i><div class="flex-grow-1 small"><span class="topic-id">${esc(x.id)}</span> ${esc(x.title)}</div><span class="kpi-hint">${L.fmt(x.completionDate, { weekday: 'short', day: 'numeric' })}</span></a>`).join('') : L.emptyState('bi-signpost', 'No topics completed this week');
+    $('projectList').innerHTML = w.projects.length ? w.projects.map(p => `<a class="list-row text-decoration-none" style="color:inherit" href="projects.html?project=${encodeURIComponent(p.id)}"><i class="bi bi-kanban text-accent"></i><div class="flex-grow-1 small">${esc(p.name)}</div><span class="small">${Math.round(L.projectProgress(p))}%</span></a>`).join('') : L.emptyState('bi-kanban', 'No project activity this week');
+    const c = L.chartColors();
+    L.chart('weekChart', { type: 'bar', data: { labels: w.daily.map(d => L.fmt(d.date, { weekday: 'short' })), datasets: [{ label: 'Actual minutes', data: w.daily.map(d => d.actual), backgroundColor: c.secondary, borderRadius: 6 }, { label: 'Planned', data: w.daily.map(d => d.exists ? d.planned : 0), backgroundColor: 'rgba(255,159,67,.45)', borderRadius: 6 }] }, options: { scales: { y: { beginAtZero: true } } } });
+    if (!document.activeElement || !$('reviewForm').contains(document.activeElement)) {
+      $('wTarget').value = w.targetHours; $('wAch').value = rv ? rv.achievements || '' : ''; $('wDiff').value = rv ? rv.difficulties || '' : '';
+      $('wLessons').value = rv ? rv.lessons || '' : ''; $('wNext').value = rv ? rv.priorities || '' : '';
+    }
+    $('reviewSaved').textContent = rv && rv.updatedAt ? `Saved ${L.fmtTs(rv.updatedAt)}` : 'Not saved yet';
+    $('deleteReview').disabled = !rv;
+    const keys = Object.keys(L.state.weeklyReviews).sort().reverse();
+    $('reviewList').innerHTML = keys.length ? keys.map(k => { const ws = L.weekStats(k); return `<button class="list-row w-100 border-0 bg-transparent text-start" style="color:inherit" data-week="${k}"><i class="bi bi-journal-check ${k === start ? 'text-accent' : 'text-primary-lmt'}"></i><div class="flex-grow-1 small"><strong>${L.fmt(k, { day: 'numeric', month: 'short' })} – ${L.fmt(ws.end, { day: 'numeric', month: 'short', year: 'numeric' })}</strong><div class="kpi-hint">${L.r1(ws.hours)}h studied · ${ws.topicsCompleted.length} topics</div></div></button>`; }).join('') : L.emptyState('bi-journal', 'No saved reviews yet');
+  }
+  function go(s) { start = L.weekStart(s); try { history.replaceState(null, '', `?week=${start}`); } catch (e) { /* file:// may block */ } render(); }
+  $('prevW').addEventListener('click', () => go(L.addDays(start, -7)));
+  $('nextW').addEventListener('click', () => go(L.addDays(start, 7)));
+  $('thisW').addEventListener('click', () => go(L.today()));
+  $('lastW').addEventListener('click', () => go(L.addDays(L.weekStart(L.today()), -7)));
+  $('weekPick').addEventListener('change', e => { if (e.target.value) go(e.target.value); });
+  $('reviewList').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) go(b.dataset.week); });
+  $('reviewForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target; f.classList.add('was-validated');
+    if (!f.checkValidity()) { L.toast('Please enter a valid weekly target.', 'danger'); return; }
+    const prev = L.state.weeklyReviews[start];
+    L.state.weeklyReviews[start] = { weekStart: start, targetHours: L.clamp(L.num($('wTarget').value), 0, 168), achievements: $('wAch').value, difficulties: $('wDiff').value, lessons: $('wLessons').value, priorities: $('wNext').value, createdAt: prev ? prev.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString() };
+    L.log('review', `Saved weekly review for week of ${L.fmt(start)}`);
+    document.activeElement && document.activeElement.blur();
+    L.save(); L.toast('Weekly reflection saved.');
+  });
+  $('importDaily').addEventListener('click', () => {
+    const w = L.weekStats(start);
+    const collect = k => w.daily.filter(d => d.rec && d.rec[k] && d.rec[k].trim()).map(d => `- ${L.fmt(d.date, { weekday: 'short' })}: ${d.rec[k].trim().replace(/\n+/g, ' ')}`).join('\n');
+    const add = (id, txt) => { if (txt) $(id).value = ($(id).value ? $(id).value + '\n' : '') + txt; };
+    const a = collect('achievements'), d = collect('difficulties'), n = collect('nextSteps');
+    if (!a && !d && !n) { L.toast('No reflections found in this week\'s daily records.', 'info'); return; }
+    add('wAch', a); add('wDiff', d); add('wNext', n);
+    L.toast('Inserted notes from daily records — remember to save.', 'info');
+  });
+  $('deleteReview').addEventListener('click', async () => {
+    if (!(await L.confirm('Delete the reflection for this week? Daily records are not affected.', { title: 'Delete reflection', ok: 'Delete', danger: true }))) return;
+    delete L.state.weeklyReviews[start]; L.save(); L.toast('Reflection deleted.');
+  });
+  L.onChange(render);
+  render();
+})();
+</script>
+</body>
+</html>

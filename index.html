@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Laravel Mastery Tracker — Senior Developer Roadmap dashboard">
+<title>Dashboard — Laravel Mastery Tracker</title>
+<script>try{var s=JSON.parse(localStorage.getItem('lmt_data_v1')||'{}');document.documentElement.setAttribute('data-bs-theme',(s.settings&&s.settings.theme)||'dark')}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body data-page="dashboard" data-title="Overview Dashboard" data-subtitle="Your path from Laravel developer to Senior / Expert engineer">
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="main-wrap">
+  <header class="topbar" id="topbar"></header>
+  <main id="main" class="content" tabindex="-1">
+    <div id="todayAlert"></div>
+
+    <!-- Progress metrics (three separate calculations) -->
+    <section aria-labelledby="pmTitle" class="mb-4">
+      <h2 id="pmTitle" class="visually-hidden">Roadmap progress metrics</h2>
+      <div class="row g-3" id="metricCards">
+        <div class="col-md-4"><div class="kpi-card"><div class="skeleton mb-2"></div><div class="skeleton"></div></div></div>
+        <div class="col-md-4"><div class="kpi-card"><div class="skeleton mb-2"></div><div class="skeleton"></div></div></div>
+        <div class="col-md-4"><div class="kpi-card"><div class="skeleton mb-2"></div><div class="skeleton"></div></div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="kpiTitle" class="mb-4">
+      <h2 id="kpiTitle" class="visually-hidden">Key indicators</h2>
+      <div class="row g-3" id="kpiCards"></div>
+    </section>
+
+    <div class="row g-3 mb-4">
+      <div class="col-lg-4">
+        <div class="card-lmt h-100">
+          <div class="card-head"><h2><i class="bi bi-sun me-2 text-accent"></i>Today</h2><a href="daily-routine.html" class="small">Open routine <i class="bi bi-arrow-right"></i></a></div>
+          <div class="card-pad" id="todayCard"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card-lmt h-100">
+          <div class="card-head"><h2><i class="bi bi-calendar-week me-2 text-primary-lmt"></i>This week</h2><a href="weekly-review.html" class="small">Weekly review <i class="bi bi-arrow-right"></i></a></div>
+          <div class="card-pad" id="weekCard"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card-lmt recommend-card h-100">
+          <div class="card-head"><h2><i class="bi bi-stars me-2 text-accent"></i>Recommended next topic</h2></div>
+          <div class="card-pad" id="recommendCard"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-xl-5">
+        <div class="card-lmt h-100">
+          <div class="card-head"><h2>Weekly learning activity</h2><span class="small text-muted-lmt">Actual minutes, last 7 days</span></div>
+          <div class="card-pad"><div class="chart-box"><canvas id="weeklyChart" aria-label="Study minutes for the last 7 days" role="img"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-xl-7">
+        <div class="card-lmt h-100">
+          <div class="card-head"><h2>Category-wise progress</h2><span class="small text-muted-lmt">Completion % vs weighted %</span></div>
+          <div class="card-pad"><div class="chart-box"><canvas id="categoryChart" aria-label="Progress by roadmap category" role="img"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card-lmt h-100">
+          <div class="card-head"><h2><i class="bi bi-alarm me-2 text-accent"></i>Upcoming deadlines</h2><a href="roadmap.html" class="small">Roadmap</a></div>
+          <div id="deadlineList"></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card-lmt h-100">
+          <div class="card-head"><h2><i class="bi bi-activity me-2 text-primary-lmt"></i>Recent activity</h2></div>
+          <div id="activityList"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+(() => {
+  const L = LMT, $ = id => document.getElementById(id);
+
+  function kpi(icon, label, value, hint = '', cls = '', bar = null) {
+    return `<div class="col-6 col-md-4 col-xl-3"><div class="kpi-card fade-in"><div class="d-flex justify-content-between align-items-start gap-2">
+      <div class="min-w-0"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div>${hint ? `<div class="kpi-hint">${hint}</div>` : ''}</div>
+      <div class="kpi-icon ${cls}"><i class="bi ${icon}"></i></div></div>${bar !== null ? `<div class="mt-3">${L.progressBar(bar, { label, cls: cls === 'accent' ? 'accent' : cls === 'green' ? 'green' : '' })}</div>` : ''}</div></div>`;
+  }
+
+  function render() {
+    const s = L.state, ts = L.topicStats(), st = L.streaks(), t = L.today();
+    const todayRec = L.getDay(t), ds = L.dayStats(todayRec);
+    const wk = L.weekStats(L.weekStart(t));
+    const totalHours = L.totalStudyMinutes() / 60;
+    const projDone = s.projects.filter(p => p.status === 'Completed').length;
+    const skillsAdv = s.skills.filter(k => k.level === 'Advanced' || k.level === 'Expert').length;
+
+    $('todayAlert').innerHTML = !todayRec
+      ? `<div class="warning-box d-flex flex-wrap align-items-center gap-2 mb-4"><i class="bi bi-exclamation-triangle-fill text-accent"></i><span><strong>No daily record for today.</strong> Create today's routine record and check in to keep your streak.</span><a class="btn btn-sm btn-accent ms-auto" href="daily-routine.html">Start today</a></div>`
+      : (!todayRec.checkedIn ? `<div class="info-box d-flex flex-wrap align-items-center gap-2 mb-4"><i class="bi bi-info-circle-fill text-primary-lmt"></i><span>Today's record exists but you haven't checked in yet.</span><a class="btn btn-sm btn-primary ms-auto" href="daily-routine.html">Check in</a></div>` : '');
+
+    const metric = (title, value, formula, icon, cls) => `<div class="col-md-4"><div class="kpi-card metric-card fade-in"><div class="d-flex justify-content-between align-items-start">
+      <div><div class="kpi-label">${title}</div><div class="kpi-value">${value.toFixed(1)}%</div></div><div class="kpi-icon ${cls}"><i class="bi ${icon}"></i></div></div>
+      <div class="my-3">${L.progressBar(value, { label: title, height: 'thick', cls: cls === 'accent' ? 'accent' : '' })}</div><div class="formula">${formula}</div></div></div>`;
+    $('metricCards').innerHTML =
+      metric('Topic completion', ts.completionPct, `Completed topics ÷ total topics × 100 = ${ts.completed} ÷ ${ts.total}`, 'bi-check2-circle', '') +
+      metric('Weighted topic progress', ts.weightedPct, 'Σ topic progress % ÷ total topics', 'bi-sliders', '') +
+      metric('Hours-weighted progress', ts.hoursPct, `Σ(progress × est. hours) ÷ Σ est. hours (${ts.totalHours}h)`, 'bi-hourglass-split', 'accent');
+
+    $('kpiCards').innerHTML =
+      kpi('bi-collection', 'Total topics', ts.total, `${s.categories.length} categories`) +
+      kpi('bi-check-circle', 'Completed', ts.completed, `${ts.completedHours}h of content`, 'green') +
+      kpi('bi-play-circle', 'In progress', ts.inProgress, 'Active topics') +
+      kpi('bi-circle', 'Not started', ts.notStarted, 'Remaining', 'muted') +
+      kpi('bi-clock-history', 'Total study hours', L.r1(totalHours), 'From daily records') +
+      kpi('bi-kanban', 'Projects completed', `${projDone}<small class="fs-6 text-muted-lmt">/${s.projects.length}</small>`, 'Explicitly completed', 'accent') +
+      kpi('bi-bar-chart-steps', 'Skills Advanced+', `${skillsAdv}<small class="fs-6 text-muted-lmt">/${s.skills.length}</small>`, 'Self-assessed') +
+      kpi('bi-fire', 'Streak', `${st.current}<small class="fs-6 text-muted-lmt"> days</small>`, `Longest: ${st.longest} days`, 'accent');
+
+    const pending = todayRec ? todayRec.tasks.filter(x => !x.done) : [];
+    $('todayCard').innerHTML = `<div class="d-flex align-items-center gap-3 mb-3">
+        <div class="ring" style="--p:${ds.pct}"><span>${Math.round(ds.pct)}%</span></div>
+        <div><div class="kpi-label">Today's completion</div><div class="small text-muted-lmt">${ds.done}/${ds.total} tasks done</div>
+        <div class="mt-2 small"><strong>${ds.actual}</strong> / ${ds.planned} min studied</div>${L.progressBar(ds.timePct, { cls: 'accent', label: 'Minutes vs target' })}</div></div>
+      <div class="kpi-label mb-2">Pending tasks</div>
+      ${!todayRec ? L.emptyState('bi-calendar-plus', 'No record yet', 'Create today\'s record to see tasks.', '<a href="daily-routine.html" class="btn btn-sm btn-primary">Create record</a>')
+        : pending.length ? `<ul class="list-unstyled mb-0">${pending.slice(0, 5).map(x => `<li class="d-flex align-items-center gap-2 py-1 small"><span class="dot accent"></span><span class="flex-grow-1">${L.esc(x.title)}</span><span class="text-muted-lmt">${x.minutes}m</span></li>`).join('')}${pending.length > 5 ? `<li class="small text-muted-lmt">+${pending.length - 5} more</li>` : ''}</ul>`
+        : `<div class="small text-success"><i class="bi bi-check2-all"></i> All tasks completed for today.</div>`}`;
+
+    $('weekCard').innerHTML = `<div class="row g-2 mb-3 text-center">
+        <div class="col-4"><div class="kpi-label">Hours</div><div class="fs-5 fw-bold">${L.r1(wk.hours)}</div><div class="kpi-hint">of ${wk.targetHours}h</div></div>
+        <div class="col-4"><div class="kpi-label">Check-ins</div><div class="fs-5 fw-bold">${wk.checkins}</div><div class="kpi-hint">of 7 days</div></div>
+        <div class="col-4"><div class="kpi-label">Topics</div><div class="fs-5 fw-bold">${wk.topicsCompleted.length}</div><div class="kpi-hint">completed</div></div></div>
+      <div class="d-flex justify-content-between small mb-1"><span>Weekly hours progress</span><strong>${Math.round(wk.hoursPct)}%</strong></div>${L.progressBar(wk.hoursPct, { label: 'Weekly hours' })}
+      <div class="d-flex justify-content-between small mt-3 mb-1"><span>Weekly task completion</span><strong>${Math.round(wk.taskPct)}%</strong></div>${L.progressBar(wk.taskPct, { cls: 'green', label: 'Weekly tasks' })}
+      <div class="small text-muted-lmt mt-3">${L.fmt(wk.start, { day: 'numeric', month: 'short' })} – ${L.fmt(wk.end, { day: 'numeric', month: 'short' })}</div>`;
+
+    const rec = L.recommend();
+    if (!rec) $('recommendCard').innerHTML = L.emptyState('bi-trophy', 'Roadmap complete!', 'Every topic is marked as completed. Add custom topics to keep growing.');
+    else {
+      const cat = L.category(rec.categoryId), miss = L.prereqsMissing(rec);
+      $('recommendCard').innerHTML = `<div class="topic-id mb-1">${L.esc(rec.id)} · ${L.esc(cat ? cat.name : '')}</div>
+        <h3 class="h5 fw-bold">${L.esc(rec.title)}</h3><div class="d-flex flex-wrap gap-1 mb-2">${L.statusBadge(rec.status)} ${L.diffBadge(rec.difficulty)} ${L.priorityBadge(rec.priority)}</div>
+        <p class="small text-muted-lmt mb-3">${L.esc(rec.practiceTask || rec.description).slice(0, 180)}</p>
+        ${miss.length ? `<div class="warning-box small mb-3"><i class="bi bi-exclamation-triangle"></i> Prerequisites pending: ${miss.map(m => L.esc(m.title)).join(', ')}</div>` : ''}
+        <div class="d-flex gap-2"><a class="btn btn-sm btn-accent" href="roadmap.html?topic=${encodeURIComponent(rec.id)}"><i class="bi bi-box-arrow-in-right"></i> Open topic</a><span class="small text-muted-lmt align-self-center">${rec.hours}h est.</span></div>`;
+    }
+
+    const dl = L.deadlines(7);
+    $('deadlineList').innerHTML = dl.length ? dl.map(d => `<a href="${d.href}" class="list-row text-decoration-none" style="color:inherit"><span class="dot ${d.overdue ? 'red' : d.daysLeft <= 3 ? 'accent' : ''}"></span>
+      <div class="flex-grow-1 min-w-0"><div class="fw-semibold small text-truncate">${L.esc(d.title)}</div><div class="kpi-hint">${d.kind === 'topic' ? 'Topic ' + L.esc(d.id) : 'Project'} · ${L.fmt(d.date)}</div></div>
+      <span class="badge-lmt ${d.overdue ? 'badge-overdue' : d.daysLeft <= 3 ? 'pr-high' : 'st-ns'}">${d.overdue ? Math.abs(d.daysLeft) + 'd overdue' : d.daysLeft === 0 ? 'Today' : d.daysLeft + 'd left'}</span></a>`).join('')
+      : L.emptyState('bi-calendar2-check', 'No upcoming deadlines', 'Set target dates on roadmap topics or projects.');
+
+    const icons = { topic: 'bi-signpost-split', routine: 'bi-calendar-check', project: 'bi-kanban', skill: 'bi-bar-chart-steps', note: 'bi-sticky', system: 'bi-gear', review: 'bi-journal-check' };
+    const act = s.activity.slice(0, 8);
+    $('activityList').innerHTML = act.length ? act.map(a => `<div class="list-row"><i class="bi ${icons[a.type] || 'bi-dot'} text-primary-lmt"></i><div class="flex-grow-1 small">${L.esc(a.text)}</div><span class="kpi-hint text-nowrap">${L.timeAgo(a.ts)}</span></div>`).join('')
+      : L.emptyState('bi-activity', 'No activity yet');
+
+    const c = L.chartColors();
+    const days = [...Array(7)].map((_, i) => L.addDays(t, i - 6));
+    L.chart('weeklyChart', { type: 'bar', data: { labels: days.map(d => L.fmt(d, { weekday: 'short' })), datasets: [
+      { label: 'Actual minutes', data: days.map(d => L.dayStats(L.getDay(d)).actual), backgroundColor: c.secondary, borderRadius: 6 },
+      { label: 'Planned minutes', data: days.map(d => { const r = L.getDay(d); return r ? L.num(r.plannedMinutes) : 0; }), type: 'line', borderColor: c.accent, backgroundColor: c.accent, tension: .3, pointRadius: 3 }] },
+      options: { scales: { y: { beginAtZero: true } } } });
+    const cs = L.categoryStats();
+    L.chart('categoryChart', { type: 'bar', data: { labels: cs.map(x => x.category.code || x.category.name.slice(0, 3)), datasets: [
+      { label: 'Completion %', data: cs.map(x => L.r1(x.completionPct)), backgroundColor: c.primary, borderRadius: 5 },
+      { label: 'Weighted %', data: cs.map(x => L.r1(x.weightedPct)), backgroundColor: c.accent, borderRadius: 5 }] },
+      options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { tooltip: { callbacks: { title: items => cs[items[0].dataIndex].category.name } } } } });
+  }
+  L.onChange(render);
+  render();
+})();
+</script>
+</body>
+</html>

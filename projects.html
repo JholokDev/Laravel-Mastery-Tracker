@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects — Laravel Mastery Tracker</title>
+<script>try{var s=JSON.parse(localStorage.getItem('lmt_data_v1')||'{}');document.documentElement.setAttribute('data-bs-theme',(s.settings&&s.settings.theme)||'dark')}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body data-page="projects" data-title="Project Tracker" data-subtitle="Portfolio projects that prove senior-level skills">
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="main-wrap">
+  <header class="topbar" id="topbar"></header>
+  <main id="main" class="content" tabindex="-1">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+      <div><h2 class="page-title">Portfolio projects</h2><p class="small text-muted-lmt mb-0" id="projSummary"></p></div>
+      <button class="btn btn-primary btn-sm" id="btnNewProject"><i class="bi bi-plus-lg"></i> New project</button>
+    </div>
+    <div class="card-lmt card-pad mb-3" role="search">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-4"><label class="form-label" for="pSearch">Search</label><input type="search" class="form-control form-control-sm" id="pSearch" placeholder="Search name or description"></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="pStatus">Status</label><select class="form-select form-select-sm" id="pStatus"><option value="">All</option><option>Planned</option><option>In Progress</option><option>On Hold</option><option>Completed</option></select></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="pPriority">Priority</label><select class="form-select form-select-sm" id="pPriority"><option value="">All</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="pSort">Sort</label><select class="form-select form-select-sm" id="pSort"><option value="default">Default</option><option value="ladder">Difficulty (starter → expert)</option><option value="name">Name</option><option value="progress">Progress</option><option value="target">Target date</option><option value="priority">Priority</option></select></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="pView">View</label><select class="form-select form-select-sm" id="pView"><option value="cards">Cards</option><option value="table">Table</option></select></div>
+      </div>
+    </div>
+    <div id="projectGrid" class="mb-4"></div>
+
+    <section class="card-lmt mb-4" aria-labelledby="labsHeading">
+      <div class="card-head">
+        <div><h2 id="labsHeading"><i class="bi bi-boxes me-2 text-accent"></i>Component labs — one mini project per topic</h2><div class="small text-muted-lmt mt-1">Small, checkable deliverables. Use them as evidence for a single topic — then link the repo from the topic's evidence field.</div></div>
+        <span class="badge-lmt st-ns" id="labsCount"></span>
+      </div>
+      <div class="card-pad">
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-12 col-md-5"><label class="form-label" for="labSearch">Search labs</label><input type="search" class="form-control form-control-sm" id="labSearch" placeholder="e.g. middleware, queues, sanctum…"></div>
+          <div class="col-6 col-md-4"><label class="form-label" for="labCat">Category</label><select class="form-select form-select-sm" id="labCat"><option value="">All categories</option></select></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="labState">Show</label><select class="form-select form-select-sm" id="labState"><option value="all">All labs</option><option value="open">Not finished</option><option value="done">Finished</option></select></div>
+        </div>
+        <div id="labList"></div>
+      </div>
+    </section>
+    <div class="card-lmt"><div class="card-head"><h2><i class="bi bi-trophy me-2 text-accent"></i>Completion history</h2><span class="small text-muted-lmt">Kept even if a project is later reopened or deleted</span></div><div id="historyList"></div></div>
+  </main>
+</div>
+
+<!-- Project form -->
+<div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="pmTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><form class="modal-content" id="projectForm" novalidate>
+    <div class="modal-header"><h2 class="modal-title h5" id="pmTitle">Project</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body"><input type="hidden" id="pId">
+      <div class="row g-3">
+        <div class="col-12"><label class="form-label" for="pName">Project name *</label><input class="form-control" id="pName" required maxlength="120"><div class="invalid-feedback">Name is required.</div></div>
+        <div class="col-12"><label class="form-label" for="pDesc">Description</label><textarea class="form-control" id="pDesc" rows="3"></textarea></div>
+        <div class="col-6 col-md-3"><label class="form-label" for="pDifficulty">Difficulty</label><select class="form-select" id="pDifficulty"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Expert</option></select></div>
+        <div class="col-6 col-md-3"><label class="form-label" for="pPri">Priority</label><select class="form-select" id="pPri"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="col-12 col-md-6"><label class="form-label" for="pStat">Status</label><select class="form-select" id="pStat"><option>Planned</option><option>In Progress</option><option>On Hold</option></select><div class="form-text" id="pStatHelp">Use “Mark as completed” on the project to complete it explicitly.</div></div>
+        <div class="col-md-4"><label class="form-label" for="pStart">Start date</label><input type="date" class="form-control" id="pStart"></div>
+        <div class="col-md-4"><label class="form-label" for="pTarget">Target completion</label><input type="date" class="form-control" id="pTarget"><div class="invalid-feedback">Must be on/after start date.</div></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="pEst">Est. hours</label><input type="number" class="form-control" id="pEst" min="0" max="10000"></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="pAct">Actual hours</label><input type="number" class="form-control" id="pAct" min="0" max="10000" step="0.5"></div>
+        <div class="col-md-6"><label class="form-label" for="pGithub">GitHub repository URL</label><input type="url" class="form-control" id="pGithub" data-url placeholder="https://github.com/..."><div class="invalid-feedback">Enter a valid http(s):// URL.</div></div>
+        <div class="col-md-6"><label class="form-label" for="pDemo">Live demo URL</label><input type="url" class="form-control" id="pDemo" data-url placeholder="https://..."><div class="invalid-feedback">Enter a valid http(s):// URL.</div></div>
+        <div class="col-md-6"><label class="form-label" for="pDocs">Documentation URL</label><input type="url" class="form-control" id="pDocs" data-url placeholder="https://..."><div class="invalid-feedback">Enter a valid http(s):// URL.</div></div>
+        <div class="col-md-6"><label class="form-label" for="pImage">Screenshot / image URL</label><input type="url" class="form-control" id="pImage" data-url placeholder="https://.../screenshot.png"><div class="invalid-feedback">Enter a valid http(s):// URL.</div></div>
+        <div class="col-12"><label class="form-label" for="pTopics">Associated roadmap topics <span class="fw-normal text-muted-lmt">(Ctrl/Cmd + click)</span></label><select class="form-select" id="pTopics" multiple size="6"></select></div>
+        <div class="col-md-6"><label class="form-label" for="pMode">Progress tracking</label><select class="form-select" id="pMode"><option value="auto">Automatic — from completed checklist items</option><option value="manual">Manual adjustment</option></select></div>
+        <div class="col-md-6"><label class="form-label d-flex justify-content-between" for="pManual"><span>Manual progress</span><strong id="pManualVal">0%</strong></label><input type="range" class="form-range" id="pManual" min="0" max="100" step="5"></div>
+        <div class="col-12" id="pInitWrap"><label class="form-label" for="pInitFeatures">Initial features <span class="fw-normal text-muted-lmt">(one per line, optional)</span></label><textarea class="form-control" id="pInitFeatures" rows="3"></textarea></div>
+        <div class="col-12"><label class="form-label" for="pNotes">Personal notes</label><textarea class="form-control" id="pNotes" rows="3"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-lmt" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save project</button></div>
+  </form></div>
+</div>
+
+<!-- Project detail -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="dmTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><div class="min-w-0"><h2 class="modal-title h5 text-truncate" id="dmTitle">Project</h2><div class="small text-muted-lmt" id="dmSub"></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body" id="dmBody"></div>
+  </div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="projects.js"></script>
+</body>
+</html>

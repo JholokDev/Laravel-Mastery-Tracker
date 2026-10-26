@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills — Laravel Mastery Tracker</title>
+<script>try{var s=JSON.parse(localStorage.getItem('lmt_data_v1')||'{}');document.documentElement.setAttribute('data-bs-theme',(s.settings&&s.settings.theme)||'dark')}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body data-page="skills" data-title="Skills Assessment" data-subtitle="Honest self-assessment with evidence and improvement targets">
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="main-wrap">
+  <header class="topbar" id="topbar"></header>
+  <main id="main" class="content" tabindex="-1">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+      <div><h2 class="page-title">Skill matrix</h2><p class="small text-muted-lmt mb-0">Levels are always set manually. Completing roadmap topics never changes a skill level automatically.</p></div>
+      <button class="btn btn-primary btn-sm" id="btnAddSkill"><i class="bi bi-plus-lg"></i> Add skill</button>
+    </div>
+    <div class="row g-3 mb-3" id="levelKpis"></div>
+    <div class="card-lmt card-pad mb-3" role="search"><div class="row g-2 align-items-end">
+      <div class="col-md-5"><label class="form-label" for="sSearch">Search skills</label><input type="search" class="form-control form-control-sm" id="sSearch" placeholder="e.g. Testing"></div>
+      <div class="col-6 col-md-3"><label class="form-label" for="sLevel">Level</label><select class="form-select form-select-sm" id="sLevel"><option value="">All levels</option><option>Not Evaluated</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Expert</option></select></div>
+      <div class="col-6 col-md-4"><label class="form-label" for="sCat">Category</label><select class="form-select form-select-sm" id="sCat"></select></div>
+    </div></div>
+    <div class="card-lmt"><div class="table-responsive"><table class="table table-hover align-middle">
+      <thead><tr><th scope="col" class="sortable" data-sort="name" tabindex="0">Skill <i class="bi bi-arrow-down-up small"></i></th><th scope="col" class="sortable" data-sort="level" tabindex="0">Self-assessed level <i class="bi bi-arrow-down-up small"></i></th><th scope="col">Roadmap reference</th><th scope="col" class="sortable" data-sort="date" tabindex="0">Last assessed <i class="bi bi-arrow-down-up small"></i></th><th scope="col">Evidence</th><th scope="col">Next target</th><th scope="col" class="text-end">Actions</th></tr></thead>
+      <tbody id="skillRows"></tbody></table></div></div>
+  </main>
+</div>
+
+<div class="modal fade" id="skillModal" tabindex="-1" aria-labelledby="smTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><form class="modal-content" id="skillForm" novalidate>
+    <div class="modal-header"><h2 class="modal-title h5" id="smTitle">Assess skill</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body"><input type="hidden" id="sId">
+      <div id="sRef" class="mb-3"></div>
+      <div class="row g-3">
+        <div class="col-md-7"><label class="form-label" for="sName">Skill name *</label><input class="form-control" id="sName" required maxlength="100"><div class="invalid-feedback">Name is required.</div></div>
+        <div class="col-md-5"><label class="form-label" for="sCategory">Category</label><select class="form-select" id="sCategory"></select></div>
+        <div class="col-md-7"><span class="form-label d-block">Self-assessment level</span><div class="btn-group flex-wrap" role="radiogroup" aria-label="Skill level" id="levelGroup"></div></div>
+        <div class="col-md-5"><label class="form-label" for="sDate">Last assessed date</label><input type="date" class="form-control" id="sDate"></div>
+        <div class="col-12"><label class="form-label" for="sEvidence">Evidence or project link</label><input type="url" class="form-control" id="sEvidence" data-url placeholder="https://github.com/..."><div class="invalid-feedback">Enter a valid http(s):// URL.</div></div>
+        <div class="col-12"><label class="form-label" for="sTarget">Next improvement target</label><input class="form-control" id="sTarget" maxlength="200" placeholder="e.g. Write tests for queue failure scenarios"></div>
+        <div class="col-12"><label class="form-label" for="sNotes">Personal notes</label><textarea class="form-control" id="sNotes" rows="3"></textarea></div>
+        <div class="col-12" id="sHistory"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-lmt" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save assessment</button></div>
+  </form></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+(() => {
+  const L = LMT, $ = id => document.getElementById(id), esc = L.esc;
+  const LEVELS = ['Not Evaluated', 'Beginner', 'Intermediate', 'Advanced', 'Expert'];
+  const modal = new bootstrap.Modal($('skillModal'));
+  let sort = { key: 'default', dir: 1 };
+  const pill = lvl => { const n = LEVELS.indexOf(lvl); return `<span class="level-pill" aria-hidden="true">${[1, 2, 3, 4].map(i => `<span class="${i <= n ? 'on' : ''} ${n === 4 ? 'exp' : ''}"></span>`).join('')}</span>`; };
+
+  function render() {
+    const cats = L.sortedCategories(), cur = $('sCat').value;
+    $('sCat').innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+    $('sCat').value = L.category(cur) ? cur : '';
+    const all = L.state.skills;
+    $('levelKpis').innerHTML = LEVELS.map((lv, i) => `<div class="col-6 col-md-4 col-xl"><div class="kpi-card"><div class="kpi-label">${lv}</div><div class="kpi-value">${all.filter(s => s.level === lv).length}</div>${pill(lv)}</div></div>`).join('');
+    const q = $('sSearch').value.trim().toLowerCase(), lv = $('sLevel').value, cat = $('sCat').value;
+    let list = all.filter(s => (!q || `${s.name} ${s.notes} ${s.nextTarget}`.toLowerCase().includes(q)) && (!lv || s.level === lv) && (!cat || s.categoryId === cat));
+    if (sort.key === 'name') list.sort((a, b) => a.name.localeCompare(b.name) * sort.dir);
+    else if (sort.key === 'level') list.sort((a, b) => (LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level)) * sort.dir);
+    else if (sort.key === 'date') list.sort((a, b) => (a.lastAssessed || '').localeCompare(b.lastAssessed || '') * sort.dir);
+    $('skillRows').innerHTML = list.length ? list.map(s => {
+      const c = L.category(s.categoryId), rs = c ? L.statsFor(L.state.topics.filter(t => t.categoryId === c.id)) : null;
+      const stale = s.lastAssessed && L.diffDays(s.lastAssessed, L.today()) > 90;
+      return `<tr data-id="${esc(s.id)}"><td><div class="fw-semibold">${esc(s.name)}</div><div class="small text-muted-lmt">${esc(c ? c.name : 'Uncategorised')}</div></td>
+        <td><div class="d-flex flex-column gap-1"><span class="small fw-semibold">${esc(s.level)}</span>${pill(s.level)}</div></td>
+        <td style="min-width:140px">${rs ? `${L.progressBar(rs.completionPct, { cls: 'thin', label: 'Related roadmap completion' })}<div class="small text-muted-lmt mt-1">${rs.completed}/${rs.total} topics in ${esc(c.code || c.name)}</div>` : '—'}</td>
+        <td class="small">${s.lastAssessed ? L.fmt(s.lastAssessed) : '<span class="text-muted-lmt">Never</span>'}${stale ? '<div class="text-accent small"><i class="bi bi-arrow-repeat"></i> Reassess</div>' : ''}</td>
+        <td>${L.link(s.evidenceUrl, 'Evidence', 'bi-patch-check')}</td>
+        <td class="small" style="max-width:220px">${esc(s.nextTarget) || '<span class="text-muted-lmt">—</span>'}</td>
+        <td class="text-end text-nowrap"><button class="btn btn-sm btn-outline-lmt" data-act="assess"><i class="bi bi-clipboard-check"></i> Assess</button><button class="btn-ghost danger ms-1" data-act="delete" aria-label="Delete ${esc(s.name)}"><i class="bi bi-trash"></i></button></td></tr>`;
+    }).join('') : `<tr><td colspan="7">${L.emptyState('bi-bar-chart-steps', 'No skills found', 'Adjust filters or add a skill.')}</td></tr>`;
+  }
+  function open(s = null) {
+    const f = $('skillForm'); f.reset(); f.classList.remove('was-validated'); $('sEvidence').setCustomValidity('');
+    $('smTitle').textContent = s ? `Assess: ${s.name}` : 'Add skill';
+    $('sId').value = s ? s.id : '';
+    $('sName').value = s ? s.name : '';
+    $('sCategory').innerHTML = '<option value="">Uncategorised</option>' + L.sortedCategories().map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+    $('sCategory').value = s ? s.categoryId || '' : '';
+    const level = s ? s.level : 'Not Evaluated';
+    $('levelGroup').innerHTML = LEVELS.map((lv, i) => `<input type="radio" class="btn-check" name="level" id="lv${i}" value="${lv}" ${lv === level ? 'checked' : ''}><label class="btn btn-sm btn-outline-lmt" for="lv${i}">${lv}</label>`).join('');
+    $('sDate').value = s ? s.lastAssessed || '' : '';
+    $('sEvidence').value = s ? s.evidenceUrl || '' : ''; $('sTarget').value = s ? s.nextTarget || '' : ''; $('sNotes').value = s ? s.notes || '' : '';
+    const c = s && L.category(s.categoryId), rs = c ? L.statsFor(L.state.topics.filter(t => t.categoryId === c.id)) : null;
+    $('sRef').innerHTML = rs ? `<div class="info-box small"><i class="bi bi-info-circle text-primary-lmt"></i> Reference only: you have completed <strong>${rs.completed}/${rs.total}</strong> topics in <em>${esc(c.name)}</em> (${Math.round(rs.completionPct)}%). Topic completion does not determine your level — judge it from real-world evidence.</div>` : '';
+    $('sHistory').innerHTML = s && s.history && s.history.length ? `<div class="kpi-label mb-1">Assessment history</div><ul class="list-unstyled small mb-0">${s.history.slice().reverse().map(h => `<li class="py-1 border-bottom" style="border-color:var(--lmt-border)!important"><span class="text-muted-lmt">${L.fmt(h.date)}</span> — ${esc(h.level)}</li>`).join('')}</ul>` : '';
+    modal.show();
+  }
+  document.addEventListener('change', e => { if (e.target.name === 'level' && !$('sDate').value) $('sDate').value = L.today(); });
+  $('skillForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target; $('sName').value = $('sName').value.trim();
+    L.validateUrlInputs(f); f.classList.add('was-validated');
+    if (!f.checkValidity()) { L.toast('Please fix the highlighted fields.', 'danger'); return; }
+    const id = $('sId').value, level = (f.querySelector('input[name="level"]:checked') || {}).value || 'Not Evaluated';
+    const s = id ? L.state.skills.find(x => x.id === id) : { id: L.uid('SK'), history: [] };
+    const prevLevel = s.level;
+    let date = $('sDate').value;
+    if (level !== prevLevel && level !== 'Not Evaluated' && !date) date = L.today();
+    Object.assign(s, { name: $('sName').value, categoryId: $('sCategory').value, level, lastAssessed: date, evidenceUrl: $('sEvidence').value.trim(), nextTarget: $('sTarget').value.trim(), notes: $('sNotes').value });
+    s.history = s.history || [];
+    if (level !== prevLevel || !id) s.history.push({ date: date || L.today(), level });
+    if (!id) L.state.skills.push(s);
+    L.log('skill', level !== prevLevel ? `Assessed ${s.name} as ${level}` : `Updated skill ${s.name}`, s.id);
+    L.save(); modal.hide(); L.toast('Skill assessment saved.');
+  });
+  $('skillRows').addEventListener('click', async e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const s = L.state.skills.find(x => x.id === b.closest('[data-id]').dataset.id); if (!s) return;
+    if (b.dataset.act === 'assess') open(s);
+    else if (await L.confirm(`Delete skill "${s.name}" and its assessment history?`, { title: 'Delete skill', ok: 'Delete', danger: true })) {
+      L.state.skills = L.state.skills.filter(x => x.id !== s.id); L.log('skill', `Deleted skill ${s.name}`); L.save(); L.toast('Skill deleted.');
+    }
+  });
+  document.querySelectorAll('th.sortable').forEach(th => {
+    const go = () => { const k = th.dataset.sort; sort = { key: k, dir: sort.key === k ? -sort.dir : 1 }; document.querySelectorAll('th.sortable').forEach(x => x.removeAttribute('aria-sort')); th.setAttribute('aria-sort', sort.dir > 0 ? 'ascending' : 'descending'); render(); };
+    th.addEventListener('click', go); th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+  $('btnAddSkill').addEventListener('click', () => open());
+  $('sSearch').addEventListener('input', L.debounce(render, 200));
+  ['sLevel', 'sCat'].forEach(i => $(i).addEventListener('change', render));
+  L.onChange(render);
+  render();
+})();
+</script>
+</body>
+</html>

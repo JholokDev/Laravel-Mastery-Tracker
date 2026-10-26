@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analytics — Laravel Mastery Tracker</title>
+<script>try{var s=JSON.parse(localStorage.getItem('lmt_data_v1')||'{}');document.documentElement.setAttribute('data-bs-theme',(s.settings&&s.settings.theme)||'dark')}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body data-page="analytics" data-title="Progress Analytics" data-subtitle="Visual insight into your learning velocity and consistency">
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="main-wrap">
+  <header class="topbar" id="topbar"></header>
+  <main id="main" class="content" tabindex="-1">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+      <h2 class="page-title">Analytics</h2>
+      <div class="d-flex align-items-center gap-2"><label for="range" class="small text-muted-lmt">Daily range</label><select class="form-select form-select-sm w-auto" id="range"><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="90">Last 90 days</option><option value="180">Last 180 days</option></select></div>
+    </div>
+    <div class="row g-3 mb-3" id="aKpis"></div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-xl-8"><div class="card-lmt h-100"><div class="card-head"><h2>Category progress comparison</h2><span class="small text-muted-lmt">Completion vs weighted vs hours-weighted</span></div><div class="card-pad"><div class="chart-box lg"><canvas id="cCategory" role="img" aria-label="Category progress comparison"></canvas></div></div></div></div>
+      <div class="col-xl-4"><div class="card-lmt h-100"><div class="card-head"><h2>Topics by status</h2></div><div class="card-pad"><div class="chart-box lg"><canvas id="cStatus" role="img" aria-label="Topics by status"></canvas></div></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-xl-8"><div class="card-lmt h-100"><div class="card-head"><h2>Daily study minutes</h2></div><div class="card-pad"><div class="chart-box"><canvas id="cDaily" role="img" aria-label="Daily study minutes"></canvas></div></div></div></div>
+      <div class="col-xl-4"><div class="card-lmt h-100"><div class="card-head"><h2>Daily streak history</h2></div><div class="card-pad"><div class="chart-box"><canvas id="cStreak" role="img" aria-label="Daily streak history"></canvas></div></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6"><div class="card-lmt h-100"><div class="card-head"><h2>Weekly study hours</h2><span class="small text-muted-lmt">Last 12 weeks vs target</span></div><div class="card-pad"><div class="chart-box"><canvas id="cWeekly" role="img" aria-label="Weekly study hours"></canvas></div></div></div></div>
+      <div class="col-lg-6"><div class="card-lmt h-100"><div class="card-head"><h2>Monthly study activity</h2><span class="small text-muted-lmt">Last 12 months</span></div><div class="card-pad"><div class="chart-box"><canvas id="cMonthly" role="img" aria-label="Monthly study activity"></canvas></div></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6"><div class="card-lmt h-100"><div class="card-head"><h2>Completed topics over time</h2><span class="small text-muted-lmt">Cumulative, by completion date</span></div><div class="card-pad"><div class="chart-box"><canvas id="cCompleted" role="img" aria-label="Completed topics over time"></canvas></div></div></div></div>
+      <div class="col-lg-6"><div class="card-lmt h-100"><div class="card-head"><h2>Project progress</h2></div><div class="card-pad"><div class="chart-box"><canvas id="cProjects" role="img" aria-label="Project progress"></canvas></div></div></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-8"><div class="card-lmt h-100"><div class="card-head"><h2>Estimated vs actual hours — projects</h2></div><div class="card-pad"><div class="chart-box"><canvas id="cEstAct" role="img" aria-label="Estimated versus actual project hours"></canvas></div></div></div></div>
+      <div class="col-lg-4"><div class="card-lmt h-100"><div class="card-head"><h2>Estimated vs actual — learning</h2></div><div class="card-pad" id="learnHours"></div></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="analytics.js"></script>
+</body>
+</html>

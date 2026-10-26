@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap — Laravel Mastery Tracker</title>
+<script>try{var s=JSON.parse(localStorage.getItem('lmt_data_v1')||'{}');document.documentElement.setAttribute('data-bs-theme',(s.settings&&s.settings.theme)||'dark')}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body data-page="roadmap" data-title="Learning Roadmap" data-subtitle="Every skill on the path to Senior Laravel Engineer">
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation"></aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="main-wrap">
+  <header class="topbar" id="topbar"></header>
+  <main id="main" class="content" tabindex="-1">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+      <div><h2 class="page-title">Roadmap</h2><p class="text-muted-lmt small mb-0" id="rmSummary"></p></div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-lmt btn-sm" id="btnExpandAll"><i class="bi bi-arrows-expand"></i> Expand all</button>
+        <button class="btn btn-outline-lmt btn-sm" id="btnCollapseAll"><i class="bi bi-arrows-collapse"></i> Collapse all</button>
+        <button class="btn btn-outline-lmt btn-sm" id="btnAddCategory"><i class="bi bi-folder-plus"></i> Add category</button>
+        <button class="btn btn-primary btn-sm" id="btnAddTopic"><i class="bi bi-plus-lg"></i> Add topic</button>
+      </div>
+    </div>
+
+    <div class="card-lmt card-pad mb-3" role="search">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-3"><label class="form-label" for="fSearch">Search topics</label>
+          <div class="input-group input-group-sm"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="search" class="form-control" id="fSearch" placeholder="e.g. Eloquent, OWASP…"></div></div>
+        <div class="col-6 col-md-4 col-lg"><label class="form-label" for="fStatus">Status</label><select class="form-select form-select-sm" id="fStatus"><option value="">All</option><option>Not Started</option><option>In Progress</option><option>Completed</option><option value="overdue">Overdue</option></select></div>
+        <div class="col-6 col-md-4 col-lg"><label class="form-label" for="fDifficulty">Difficulty</label><select class="form-select form-select-sm" id="fDifficulty"><option value="">All</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Expert</option></select></div>
+        <div class="col-6 col-md-4 col-lg"><label class="form-label" for="fCategory">Category</label><select class="form-select form-select-sm" id="fCategory"></select></div>
+        <div class="col-6 col-md-4 col-lg"><label class="form-label" for="fPriority">Priority</label><select class="form-select form-select-sm" id="fPriority"><option value="">All</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="col-6 col-md-4 col-lg"><label class="form-label" for="fSort">Sort by</label><select class="form-select form-select-sm" id="fSort"><option value="default">Roadmap order</option><option value="title">Title (A–Z)</option><option value="deadline">Deadline</option><option value="priority">Priority</option><option value="hours">Estimated hours</option></select></div>
+        <div class="col-6 col-md-4 col-lg-auto"><button class="btn btn-outline-lmt btn-sm w-100" id="btnReset"><i class="bi bi-x-circle"></i> Reset</button></div>
+      </div>
+    </div>
+
+    <div id="bulkBar" class="bulk-bar d-none" role="region" aria-label="Bulk actions">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <strong id="bulkCount">0 selected</strong>
+        <label for="bulkStatus" class="visually-hidden">Bulk status</label>
+        <select class="form-select form-select-sm w-auto" id="bulkStatus"><option value="">Change status to…</option><option>Not Started</option><option>In Progress</option><option>Completed</option></select>
+        <button class="btn btn-sm btn-light" id="bulkApply">Apply</button>
+        <button class="btn btn-sm btn-outline-light" id="bulkSelectVisible">Select visible</button>
+        <button class="btn btn-sm btn-outline-light ms-auto" id="bulkClear">Clear selection</button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-xl-3 d-none d-xl-block"><nav class="card-lmt p-2 cat-nav position-sticky" style="top:84px" id="catNav" aria-label="Roadmap categories"></nav></div>
+      <div class="col-xl-9"><div id="roadmapList"><div class="card-lmt card-pad"><div class="skeleton mb-2"></div><div class="skeleton mb-2"></div><div class="skeleton"></div></div></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- Topic details -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="topicDetails" aria-labelledby="tdTitle" style="width:min(560px,100vw)">
+  <div class="offcanvas-header border-bottom" style="border-color:var(--lmt-border)!important"><h2 class="offcanvas-title h5" id="tdTitle">Topic</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+  <div class="offcanvas-body" id="tdBody"></div>
+</div>
+
+<!-- Topic form -->
+<div class="modal fade" id="topicModal" tabindex="-1" aria-labelledby="tmTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><form class="modal-content" id="topicForm" novalidate>
+    <div class="modal-header"><h2 class="modal-title h5" id="tmTitle">Topic</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="tId">
+      <div id="tPrereqWarn"></div>
+      <div class="row g-3">
+        <div class="col-md-8"><label class="form-label" for="tTitle">Title *</label><input class="form-control" id="tTitle" required maxlength="160"><div class="invalid-feedback">Title is required.</div></div>
+        <div class="col-md-4"><label class="form-label" for="tCategory">Category *</label><select class="form-select" id="tCategory" required></select><div class="invalid-feedback">Choose a category.</div></div>
+        <div class="col-6 col-md-3"><label class="form-label" for="tDifficulty">Difficulty</label><select class="form-select" id="tDifficulty"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Expert</option></select></div>
+        <div class="col-6 col-md-3"><label class="form-label" for="tPriority">Priority</label><select class="form-select" id="tPriority"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="col-6 col-md-3"><label class="form-label" for="tHours">Est. hours</label><input type="number" class="form-control" id="tHours" min="0" max="1000" step="0.5" required><div class="invalid-feedback">0–1000 hours.</div></div>
+        <div class="col-6 col-md-3"><label class="form-label" for="tStatus">Status</label><select class="form-select" id="tStatus"><option>Not Started</option><option>In Progress</option><option>Completed</option></select></div>
+        <div class="col-12"><label class="form-label d-flex justify-content-between" for="tProgress"><span>Progress</span><strong id="tProgressVal">0%</strong></label><input type="range" class="form-range" id="tProgress" min="0" max="100" step="5"><div class="form-text">Progress is tracked separately — reaching 100% does not mark the topic as completed.</div></div>
+        <div class="col-md-4"><label class="form-label" for="tStart">Start date</label><input type="date" class="form-control" id="tStart"></div>
+        <div class="col-md-4"><label class="form-label" for="tTarget">Target date</label><input type="date" class="form-control" id="tTarget"><div class="invalid-feedback">Target must be on/after start date.</div></div>
+        <div class="col-md-4"><label class="form-label" for="tCompletion">Completion date</label><input type="date" class="form-control" id="tCompletion"><div class="form-text">Set automatically when completed.</div></div>
+        <div class="col-12"><label class="form-label" for="tDescription">Description</label><textarea class="form-control" id="tDescription" rows="3"></textarea></div>
+        <div class="col-12"><label class="form-label" for="tPrereqs">Prerequisites <span class="text-muted-lmt fw-normal">(Ctrl/Cmd + click for multiple)</span></label><select class="form-select" id="tPrereqs" multiple size="6"></select></div>
+        <div class="col-12"><label class="form-label" for="tPractice">Practice task</label><textarea class="form-control" id="tPractice" rows="2"></textarea></div>
+        <div class="col-12"><label class="form-label" for="tResources">Resource links <span class="text-muted-lmt fw-normal">(one URL per line)</span></label><textarea class="form-control" id="tResources" rows="3" data-url placeholder="https://laravel.com/docs/..."></textarea><div class="invalid-feedback">Every line must be a valid http(s):// URL.</div></div>
+        <div class="col-md-4"><label class="form-label" for="tGithub">GitHub repository</label><input type="url" class="form-control" id="tGithub" data-url placeholder="https://github.com/..."><div class="invalid-feedback">Invalid URL.</div></div>
+        <div class="col-md-4"><label class="form-label" for="tDemo">Live demo</label><input type="url" class="form-control" id="tDemo" data-url placeholder="https://..."><div class="invalid-feedback">Invalid URL.</div></div>
+        <div class="col-md-4"><label class="form-label" for="tEvidence">Project / evidence link</label><input type="url" class="form-control" id="tEvidence" data-url placeholder="https://..."><div class="invalid-feedback">Invalid URL.</div></div>
+        <div class="col-12"><label class="form-label" for="tNotes">Personal notes</label><textarea class="form-control" id="tNotes" rows="3" placeholder="Supports **bold**, `code`, lists and ``` code blocks"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-lmt" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save topic</button></div>
+  </form></div>
+</div>
+
+<!-- Category form -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="cmTitle" aria-hidden="true">
+  <div class="modal-dialog"><form class="modal-content" id="categoryForm" novalidate>
+    <div class="modal-header"><h2 class="modal-title h5" id="cmTitle">Category</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body"><input type="hidden" id="cId">
+      <div class="row g-3">
+        <div class="col-8"><label class="form-label" for="cName">Name *</label><input class="form-control" id="cName" required maxlength="80"><div class="invalid-feedback">Name is required.</div></div>
+        <div class="col-4"><label class="form-label" for="cCode">Code</label><input class="form-control" id="cCode" maxlength="4" placeholder="O"></div>
+        <div class="col-12"><label class="form-label" for="cIcon">Bootstrap icon class</label><input class="form-control" id="cIcon" placeholder="bi-folder"><div class="form-text">Any <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener noreferrer">Bootstrap Icon</a> name, e.g. bi-rocket.</div></div>
+        <div class="col-12"><label class="form-label" for="cDesc">Description</label><textarea class="form-control" id="cDesc" rows="3"></textarea></div>
+      </div></div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-lmt" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save category</button></div>
+  </form></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="roadmap.js"></script>
+</body>
+</html>
